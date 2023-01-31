@@ -1,32 +1,47 @@
-	<h1>Meal Chooser</h1>
-	<button onclick="chooseMeal('quick')">Quick / low effort</button>
-	<button onclick="chooseMeal('tasty')">Tasty/ Comforting</button>
-	<button onclick="chooseMeal('gourmet')">Gourmet & healthy</button>
-	<div id="recipe"></div>
+<?php include('header.php'); ?>
+<script>
+	function chooseMeal() {
+		// Get all recipe files
+		const files = <?php echo json_encode(glob('recipes/*.html')); ?>;
 
-	<script>
-		const quickRecipes = ['recipes/broccoli-soup.html', 'recipes/nachos.html', 'recipes/roasted-salmon.html', 'recipes/sausage-soup.html'];
-		const tastyRecipes = ['recipes/steak-bowl.html', 'recipes/cheese-and-crackers.html', 'recipes/tacos.html'];
-		const gourmetRecipes = ['recipes/pork-tenderloin-with-sweet-potatoes.html', 'recipes/smoked-salmon-salad.html', 'recipes/zoodle-scampi.html', 'recipes/steak-with-salad.html', 'recipes/meatballs-zoodles.html'];
-
-		function chooseMeal(mealType) {
-			let recipes;
-			if (mealType === 'quick') {
-				recipes = quickRecipes;
-			} else if (mealType === 'tasty') {
-				recipes = tastyRecipes;
-			} else if (mealType === 'gourmet') {
-				recipes = gourmetRecipes;
-			}
-
-			const randomIndex = Math.floor(Math.random() * recipes.length);
-			const recipe = recipes[randomIndex];
-
-			fetch(recipe)
-				.then(response => response.text())
-				.then(data => {
-					const recipeContainer = document.getElementById('recipe');
-					recipeContainer.innerHTML = data;
-				});
+		// Get the previously picked recipes from local storage
+		let pickedRecipes = localStorage.getItem('pickedRecipes');
+		if (pickedRecipes) {
+			pickedRecipes = JSON.parse(pickedRecipes);
+		} else {
+			pickedRecipes = [];
 		}
-	</script>
+
+		// Filter out the previously picked recipes
+		let availableRecipes = files.filter(
+			recipe => !pickedRecipes.includes(recipe)
+		);
+
+		// If all recipes have been picked, reset the picked recipes
+		if (availableRecipes.length === 0) {
+			pickedRecipes = [];
+			availableRecipes = files;
+		}
+
+		// Choose a random recipe
+		const randomIndex = Math.floor(Math.random() * availableRecipes.length);
+		const chosenRecipe = availableRecipes[randomIndex];
+
+		// Add the chosen recipe to the picked recipes
+		pickedRecipes.push(chosenRecipe);
+		localStorage.setItem('pickedRecipes', JSON.stringify(pickedRecipes));
+
+		const div = document.getElementById("recipe");
+
+		fetch(chosenRecipe)
+			.then(response => response.text())
+			.then(text => {
+				div.innerHTML = text;
+			});
+	}
+</script>
+<h1>What's for dinner?</h1>
+<button onclick="chooseMeal()">Choose a Meal</button>
+
+<div id="recipe"></div>
+<?php include('footer.php'); ?>
